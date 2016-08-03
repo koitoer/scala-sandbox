@@ -1,0 +1,35 @@
+import com.twitter.finagle.Thrift
+import com.twitter.finagle.examples.names.thriftscala._
+
+val server = SafeNameRecognizerService.create(Seq("en"), 4, 4) map { service =>
+  Thrift.serveIface("localhost:9090", service)
+} onSuccess { _ =>
+  println("Server started successfully")
+} onFailure { ex =>
+  println("Could not start the server: " + ex)
+}
+
+
+import com.twitter.finagle.Thrift
+import com.twitter.finagle.examples.names.thriftscala._
+
+val client =
+  Thrift.newIface[NameRecognizerService.FutureIface]("localhost:9090")
+
+val doc = """
+An anomaly which often struck me in the character of my friend Mauricio Mena
+was that, although in his methods of thought he was the neatest and most
+methodical of mankind, and although also he affected a certain quiet primness of
+dress, he was none the less in his personal habits one of the most untidy men
+that ever drove a fellow-lodger to distraction. Not that I am in the least
+conventional in that respect myself. The rough-and-tumble work in Mexico,
+coming on the top of a natural Bohemianism of disposition, has made me rather
+more lax than befits a medical man.
+"""
+
+client.findNames("en", doc) onSuccess { response =>
+  println("People: " + response.persons.mkString(", "))
+  println("Places: " + response.locations.mkString(", "))
+} onFailure { ex =>
+  println("Something bad happened: " + ex.getMessage)
+}
